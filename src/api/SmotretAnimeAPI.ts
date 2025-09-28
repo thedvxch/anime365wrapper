@@ -67,12 +67,16 @@ export class SmotretAnimeAPI {
    */
   async login(email: string, password: string): Promise<string> {
     const endpoint = `/login?app=universal&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-    const data = await this.request<LoginResponse>(endpoint);
-    if (data.access_token) {
-      this.accessToken = data.access_token;
-      return this.accessToken;
-    } else {
-      throw new Error('Не удалось получить access_token');
+    try {
+      const data = await this.request<LoginResponse>(endpoint);
+      if (data && data.access_token) {
+        this.accessToken = data.access_token;
+        return this.accessToken;
+      } else {
+        throw new Error('Не удалось получить access_token');
+      }
+    } catch (error) {
+      throw new Error(`Ошибка авторизации: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   }
 
@@ -131,6 +135,9 @@ export class SmotretAnimeAPI {
   // ===== Методы для работы с пользователем =====
 
   async getCurrentUser(): Promise<User> {
+    if (!this.accessToken) {
+      throw new Error('Требуется авторизация для получения информации о пользователе');
+    }
     return this.request<User>('/me');
   }
 }

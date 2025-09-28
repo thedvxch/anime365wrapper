@@ -1,7 +1,7 @@
 {
   "name": "anime365wrapper",
-  "version": "1.0.1",
-  "description": "Wrapper anime365.ru (smotret-anime) for Node.JS",
+  "version": "1.1.0",
+  "description": "Modern TypeScript wrapper for anime365.ru (smotret-anime) API with full type support and ESM/CommonJS compatibility",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -26,7 +26,12 @@
     "typescript",
     "api",
     "wrapper",
-    "smotret-anime"
+    "smotret-anime",
+    "anime365",
+    "esm",
+    "commonjs",
+    "nodejs",
+    "javascript"
   ],
   "author": "dvxchsquad",
   "contributors": [
