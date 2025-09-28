@@ -57,7 +57,7 @@ export class SmotretAnimeAPI {
     if (!response.ok) {
       throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
     }
-    const json: ApiResponse<T> = await response.json();
+    const json = await response.json() as ApiResponse<T>;
     return json.data;
   }
 
