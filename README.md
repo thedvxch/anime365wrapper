@@ -4,7 +4,6 @@
 [![npm downloads](https://img.shields.io/npm/dt/anime365wrapper.svg?style=flat-square)](https://www.npmjs.com/package/anime365wrapper)
 [![Node.js version](https://img.shields.io/node/v/anime365wrapper.svg?style=flat-square)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/thedvxchsquad/anime365wrapper/master/.github/logo.png" alt="Anime365Wrapper Logo" width="200">
@@ -344,27 +343,8 @@ npm run build
 npm test
 ```
 
-## 📄 Лицензия
-
-Этот проект лицензирован под MIT License - см. файл [LICENSE](LICENSE) для деталей.
-
-## 🤝 Вклад в проект
-
-Мы приветствуем вклад в развитие проекта! Пожалуйста, ознакомьтесь с нашими [правилами контрибуции](CONTRIBUTING.md).
-
 ## 📞 Поддержка
 
 - 🐛 **Баги и предложения**: [GitHub Issues](https://github.com/thedvxchsquad/anime365wrapper/issues)
 - 📖 **Документация API**: [TSDocs](https://tsdocs.dev)
 - 💬 **Обсуждения**: [GitHub Discussions](https://github.com/thedvxchsquad/anime365wrapper/discussions)
-
-## 🙏 Благодарности
-
-- [anime365.ru](https://smotret-anime.online) за предоставление API
-- Всем контрибьюторам проекта
-
----
-
-<p align="center">
-  Сделано с ❤️ командой <a href="https://github.com/thedvxchsquad">dvxchsquad</a>
-</p>
