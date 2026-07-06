@@ -187,7 +187,7 @@ import type {
 
 ```bash
 npm run build
-node examples/search-series.js gate
+npx tsx examples/search-series.ts gate
 ```
 
 ## Разработка

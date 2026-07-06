@@ -1,7 +1,7 @@
 // Авторизация и получение данных для воспроизведения перевода.
 // Учётные данные передаются через переменные окружения — не храните пароль/токен в коде.
-// Запуск: ANIME_EMAIL=... ANIME_PASSWORD=... npm run build && node examples/login-and-embed.js <translationId>
-import { UserSession } from '../dist/index.js';
+// Запуск: ANIME_EMAIL=... ANIME_PASSWORD=... npm run build && npx tsx examples/login-and-embed.ts <translationId>
+import { UserSession } from 'anime365wrapper';
 
 const { ANIME_EMAIL, ANIME_PASSWORD, ANIME_ACCESS_TOKEN } = process.env;
 const translationId = Number(process.argv[2] ?? 905760);

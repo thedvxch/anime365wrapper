@@ -1,6 +1,6 @@
 // Последние добавленные переводы онгоингов.
-// Запуск: npm run build && node examples/recent-translations.js
-import { SmotretAnimeAPI } from '../dist/index.js';
+// Запуск: npm run build && npx tsx examples/recent-translations.ts
+import { SmotretAnimeAPI } from 'anime365wrapper';
 
 const api = new SmotretAnimeAPI({ userAgent: 'ExampleApp/1.0' });
 

@@ -1,6 +1,6 @@
 // Поиск аниме по названию и вывод основных полей.
-// Запуск: npm run build && node examples/search-series.js "gate"
-import { SmotretAnimeAPI } from '../dist/index.js';
+// Запуск: npm run build && npx tsx examples/search-series.ts "gate"
+import { SmotretAnimeAPI } from 'anime365wrapper';
 
 const api = new SmotretAnimeAPI({ userAgent: 'ExampleApp/1.0' });
 
