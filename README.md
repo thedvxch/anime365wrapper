@@ -5,7 +5,7 @@ TypeScript/ESM-обёртка над API [smotret-anime.online](https://smotret-
 ## Требования
 
 - Node.js 18 или новее (используется встроенный `fetch`)
-- ESM (`"type": "module"`); CommonJS (`require`) не поддерживается
+- ESM (`"type": "module"`)
 
 ## Установка
 
