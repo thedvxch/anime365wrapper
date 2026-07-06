@@ -1,10 +1,12 @@
-export * from './api/SmotretAnimeAPI';
-export * from './api/UserSession';
+export * from './api/SmotretAnimeAPI.js';
+export * from './api/UserSession.js';
+export * from './errors/AnimeApiError.js';
+export * from './utils/chips.js';
 
-// Экспорт типов
-export * from './models/ApiResponse';
-export * from './models/Translation';
-export * from './models/Series';
-export * from './models/Episode';
-export * from './models/User';
-export * from './models/EmbedTranslation';
+// Типы моделей
+export * from './models/ApiResponse.js';
+export * from './models/Translation.js';
+export * from './models/Series.js';
+export * from './models/Episode.js';
+export * from './models/User.js';
+export * from './models/EmbedTranslation.js';

@@ -1,4 +1,4 @@
-import { DownloadOption, StreamOption } from './Translation';
+import type { DownloadOption, StreamOption } from './Translation.js';
 
 export interface EmbedTranslation {
   embedUrl: string;

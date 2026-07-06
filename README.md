@@ -1,350 +1,201 @@
-# Anime365Wrapper
+# anime365wrapper
 
-[![npm version](https://img.shields.io/npm/v/anime365wrapper.svg?style=flat-square)](https://www.npmjs.com/package/anime365wrapper)
-[![npm downloads](https://img.shields.io/npm/dt/anime365wrapper.svg?style=flat-square)](https://www.npmjs.com/package/anime365wrapper)
-[![Node.js version](https://img.shields.io/node/v/anime365wrapper.svg?style=flat-square)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+TypeScript/ESM-обёртка над API [smotret-anime.online](https://smotret-anime.online/api) (бывший anime365.ru): каталог аниме, переводы, эпизоды, ссылки на видео/субтитры и авторизация.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/thedvxchsquad/anime365wrapper/master/.github/logo.png" alt="Anime365Wrapper Logo" width="200">
-</p>
+## Требования
 
-> **Anime365Wrapper** — это современная TypeScript обёртка для API [anime365.ru (smotret-anime)](https://smotret-anime.online/api), обеспечивающая полную типизацию и поддержку как ESM, так и CommonJS модулей.
+- Node.js 18 или новее (используется встроенный `fetch`)
+- ESM (`"type": "module"`); CommonJS (`require`) не поддерживается
 
-## ✨ Особенности
-
-- 🔥 **Полная поддержка TypeScript** с экспортом всех типов
-- 📦 **ESM и CommonJS** совместимость
-- 🛡️ **Безопасность** - корректная обработка авторизации
-- 🚀 **Современный API** с async/await поддержкой
-- 📚 **Полная типизация** всех методов и возвращаемых данных
-- 🔧 **Гибкая настройка** базового URL и User-Agent
-- ⚡ **Быстрая работа** с кэшированием токенов
-
-## 📋 Требования
-
-- **Node.js** 10.0.0 или выше
-- **TypeScript** 4.0+ (опционально, для типизации)
-
-## 🚀 Установка
+## Установка
 
 ```bash
-# npm
 npm install anime365wrapper
-
-# yarn
-yarn add anime365wrapper
-
-# pnpm
-pnpm add anime365wrapper
 ```
 
-## 📖 Быстрый старт
-
-### ESM / TypeScript
-
-```typescript
-import { SmotretAnimeAPI, UserSession } from 'anime365wrapper';
-import type { Translation, Series } from 'anime365wrapper';
-
-const api = new SmotretAnimeAPI();
-
-// Получение списка переводов
-const translations: Translation[] = await api.getTranslations('recent');
-console.log(`Получено переводов: ${translations.length}`);
-
-// Получение списка аниме
-const series: Series[] = await api.getSeriesList({ limit: 10 });
-console.log(`Получено серий: ${series.length}`);
-```
-
-### CommonJS
-
-```javascript
-const { SmotretAnimeAPI, UserSession } = require('anime365wrapper');
-
-const api = new SmotretAnimeAPI();
-
-// Получение списка переводов
-api.getTranslations('recent')
-  .then(translations => {
-    console.log(`Получено переводов: ${translations.length}`);
-  })
-  .catch(console.error);
-```
-
-## 🔐 Авторизация
-
-### SmotretAnimeAPI
+## Быстрый старт
 
 ```typescript
 import { SmotretAnimeAPI } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI();
+const api = new SmotretAnimeAPI({ userAgent: 'MyApp/1.0' });
 
-// Авторизация
-try {
-  const token = await api.login('your_email@example.com', 'your_password');
-  console.log('Токен получен:', token);
-  
-  // Теперь можно использовать методы, требующие авторизации
-  const user = await api.getCurrentUser();
-  console.log('Пользователь:', user);
-} catch (error) {
-  console.error('Ошибка авторизации:', error.message);
-}
+const series = await api.getSeriesList({ query: 'gate', limit: 10 });
+const translations = await api.getTranslations({ feed: 'recent' });
 ```
 
-### UserSession (рекомендуется)
+API всегда указывать `userAgent` — название сайта или программы, отправляемое в заголовке `User-Agent`.
+
+## Особенности API, которые важно знать
+
+- **Ошибки приходят с HTTP 200.** Тело ответа при ошибке — `{ "error": { "code": number, "message": string } }`, статус при этом не меняется. Библиотека разбирает это сама и бросает `AnimeApiError` — проверять `response.ok` бессмысленно, полагайтесь на try/catch.
+- **Для полного сканирования используйте `afterId`, а не `offset`.** При счёте на сотни тысяч записей `offset` работает медленно; `feed: 'id'` и `feed: 'all'` поддерживают постраничный проход через `afterId` (id последней полученной записи).
+- **`subtitlesUrl` из `getTranslationEmbed()` бывает относительным** (например `/episodeTranslations/123.ass?willcache`). Библиотека сама приводит его к абсолютному URL относительно домена API.
+- **У `access_token` нет срока действия** — он действителен, пока не сменится пароль. Храните его как секрет (переменная окружения, секрет-хранилище), не коммитьте в репозиторий.
+- **Домен API может меняться** — при необходимости передайте актуальный через `baseUrl` в конструкторе, всё остальное (страницы логина, access_token) пересчитывается от него автоматически.
+
+## Конструктор
+
+```typescript
+new SmotretAnimeAPI(options?: {
+  baseUrl?: string;      // по умолчанию 'https://smotret-anime.online/api'
+  userAgent?: string;    // по умолчанию 'Anime365Wrapper/2.0'
+  accessToken?: string;  // если токен уже известен
+  timeoutMs?: number;    // таймаут запроса, по умолчанию не ограничен
+})
+```
+
+## Авторизация
+
+```typescript
+import { SmotretAnimeAPI } from 'anime365wrapper';
+
+const api = new SmotretAnimeAPI({ userAgent: 'MyApp/1.0' });
+
+const token = await api.login('user@example.com', 'password'); // сохраняется в this
+const user = await api.getCurrentUser(); // требует токен
+
+// либо переиспользовать уже полученный токен
+api.setAccessToken(token);
+```
+
+Получить `access_token` также можно вручную на сайте: `api.socialLoginUrl` (вход по email/паролю или через соцсети) и `api.accessTokenPageUrl` (страница с готовым токеном для авторизованного пользователя).
+
+### UserSession
+
+Тонкая обёртка, которая запоминает токен после `login()` и проксирует остальные методы `SmotretAnimeAPI` без дублирования его при каждом вызове:
 
 ```typescript
 import { UserSession } from 'anime365wrapper';
 
-const session = new UserSession();
+const session = new UserSession({ userAgent: 'MyApp/1.0' });
+await session.login('user@example.com', 'password');
 
-// Авторизация с автоматическим сохранением токена
-try {
-  const token = await session.login('your_email@example.com', 'your_password');
-  console.log('Успешная авторизация');
-  
-  // Токен автоматически сохраняется для последующих запросов
-  const translations = await session.getTranslations('recent');
-  console.log('Переводы:', translations);
-} catch (error) {
-  console.error('Ошибка:', error.message);
-}
+const translations = await session.getTranslations({ feed: 'recent' });
+const user = await session.getCurrentUser();
+
+// доступ к нижележащему клиенту, если нужен метод, не проксируемый UserSession
+session.client.getAccessToken();
 ```
 
-## 📚 API Документация
+## Методы SmotretAnimeAPI
 
-### SmotretAnimeAPI
-
-#### Конструктор
+### Переводы
 
 ```typescript
-new SmotretAnimeAPI(baseUrl?: string, userAgent?: string, accessToken?: string)
-```
+getTranslations(query?: {
+  feed?: 'recent' | 'id' | 'all'; // recent — последние добавленные онгоинги, id/all — полный список (all включает неактивные)
+  afterId?: number;               // для постраничного сканирования feed=id/all
+  seriesId?: number;
+  episodeId?: number;
+  fields?: string | string[];     // ограничить набор полей ответа
+  limit?: number;
+  offset?: number;
+}): Promise<Translation[]>
 
-**Параметры:**
-- `baseUrl` - Базовый URL API (по умолчанию: `https://smotret-anime.online/api`)
-- `userAgent` - User-Agent для запросов (по умолчанию: `Anime365Wrapper/1.0`)
-- `accessToken` - Токен авторизации (опционально)
-
-#### Методы
-
-##### 🔐 Авторизация
-
-```typescript
-// Установка токена
-setAccessToken(token: string): void
-
-// Авторизация по email и паролю
-login(email: string, password: string): Promise<string>
-```
-
-##### 📺 Переводы
-
-```typescript
-// Получение списка переводов
-getTranslations(feed?: 'recent' | 'id' | 'all', afterId?: number): Promise<Translation[]>
-
-// Получение перевода по ID
 getTranslationById(id: number): Promise<Translation>
 
-// Получение данных для встраивания
-getTranslationEmbed(id: number): Promise<EmbedTranslation>
+getTranslationEmbed(id: number): Promise<EmbedTranslation> // ссылки на видео/субтитры, требует авторизации
 ```
 
-##### 🎬 Аниме (серии)
+### Аниме (series)
 
 ```typescript
-// Получение списка аниме
-getSeriesList(params?: {
-  fields?: string;
-  chips?: string;
+getSeriesList(query?: {
+  fields?: string | string[];
+  chips?: string | Chip[];   // расширенный фильтр каталога, см. buildChips() ниже
   myAnimeListId?: number;
-  query?: string;
+  query?: string;            // поиск по названию
   pretty?: number;
   limit?: number;
   offset?: number;
 }): Promise<Series[]>
 
-// Получение аниме по ID
 getSeriesById(id: number): Promise<Series>
 ```
 
-##### 📝 Эпизоды
+### Эпизоды
 
 ```typescript
-// Получение эпизода по ID
 getEpisodeById(id: number): Promise<Episode>
 ```
 
-##### 👤 Пользователь
+### Пользователь
 
 ```typescript
-// Получение информации о текущем пользователе (требует авторизации)
-getCurrentUser(): Promise<User>
+getCurrentUser(): Promise<User> // требует access_token
 ```
 
-### UserSession
+## Расширенный фильтр каталога (`chips`)
+
+Список допустимых полей и операторов сам API не публикует — их видно только на сайте (вкладка фильтров каталога) или в `site.ccsData` исходного кода страницы `/catalog`. `buildChips()` лишь механически собирает строку в формате, который использует сайт, ничего не проверяя:
 
 ```typescript
-// Конструктор
-new UserSession(apiBaseUrl?: string, userAgent?: string)
+import { SmotretAnimeAPI, buildChips } from 'anime365wrapper';
 
-// Авторизация с сохранением токена
-login(email: string, password: string): Promise<string>
+const chips = buildChips([
+  { field: 'genre', operator: '@=', value: [8, 35] },
+  'genre_op=and',
+]);
+// chips === 'genre@=8,35;genre_op=and'
 
-// Установка токена
-setAccessToken(token: string): void
-
-// Прокси-методы
-getTranslations(feed?: 'recent' | 'id' | 'all', afterId?: number): Promise<Translation[]>
+const api = new SmotretAnimeAPI();
+const results = await api.getSeriesList({ chips });
 ```
 
-## 🎯 Примеры использования
-
-### Поиск аниме
+## Обработка ошибок
 
 ```typescript
-import { SmotretAnimeAPI } from 'anime365wrapper';
+import { SmotretAnimeAPI, AnimeApiError, AnimeApiNetworkError } from 'anime365wrapper';
 
 const api = new SmotretAnimeAPI();
 
-// Поиск по названию
-const searchResults = await api.getSeriesList({
-  query: 'naruto',
-  limit: 10
-});
-
-console.log('Найдено аниме:', searchResults.length);
-searchResults.forEach(series => {
-  console.log(`- ${series.title} (${series.year})`);
-});
-```
-
-### Получение информации о переводе
-
-```typescript
-import { SmotretAnimeAPI } from 'anime365wrapper';
-
-const api = new SmotretAnimeAPI();
-
-// Получение последних переводов
-const recentTranslations = await api.getTranslations('recent');
-
-if (recentTranslations.length > 0) {
-  const firstTranslation = recentTranslations[0];
-  
-  // Получение детальной информации
-  const detailedTranslation = await api.getTranslationById(firstTranslation.id);
-  console.log('Детали перевода:', detailedTranslation);
-  
-  // Получение данных для встраивания
-  const embedData = await api.getTranslationEmbed(firstTranslation.id);
-  console.log('Embed данные:', embedData);
-}
-```
-
-### Работа с сессией
-
-```typescript
-import { UserSession } from 'anime365wrapper';
-
-const session = new UserSession();
-
-async function main() {
-  try {
-    // Авторизация
-    await session.login('your_email@example.com', 'your_password');
-    
-    // Получение переводов (токен автоматически используется)
-    const translations = await session.getTranslations('recent');
-    
-    // Получение информации о пользователе
-    const user = await session.getCurrentUser();
-    console.log('Пользователь:', user);
-    
-  } catch (error) {
-    console.error('Ошибка:', error.message);
+try {
+  await api.getSeriesById(999999999);
+} catch (error) {
+  if (error instanceof AnimeApiError) {
+    console.error(`API вернул ошибку ${error.code}: ${error.message}`); // 404: Series not found.
+  } else if (error instanceof AnimeApiNetworkError) {
+    console.error('Сеть недоступна или ответ не удалось разобрать:', error.message);
+  } else {
+    throw error;
   }
 }
-
-main();
 ```
 
-## 🏗️ Типы данных
+## Типы
 
-Библиотека экспортирует все необходимые типы:
+Экспортируются все модели ответов API:
 
 ```typescript
 import type {
   Translation,
+  DownloadOption,
+  StreamOption,
+  EmbedTranslation,
   Series,
   Episode,
   User,
-  EmbedTranslation,
-  ApiResponse
+  LoginResponse,
+  ApiResponse,
 } from 'anime365wrapper';
 ```
 
-### Translation
+## Примеры
 
-```typescript
-interface Translation {
-  id: number;
-  title: string;
-  type: string;
-  seriesId: number;
-  episodeId: number;
-  isActive: number;
-  priority: number;
-  authorsList: string[];
-  // ... и другие поля
-}
-```
-
-### Series
-
-```typescript
-interface Series {
-  id: number;
-  title: string;
-  year: number;
-  type: string;
-  numberOfEpisodes: number;
-  isActive: number;
-  isAiring: number;
-  allTitles: string[];
-  // ... и другие поля
-}
-```
-
-## 🛠️ Разработка
-
-### Установка зависимостей
-
-```bash
-git clone https://github.com/thedvxchsquad/anime365wrapper.git
-cd anime365wrapper
-npm install
-```
-
-### Сборка
+В каталоге [`examples/`](./examples) — рабочие скрипты: поиск аниме, лента последних переводов, полное сканирование по `afterId`, авторизация + получение embed-данных, расширенный фильтр через `buildChips()`. Запуск после сборки:
 
 ```bash
 npm run build
+node examples/search-series.js gate
 ```
 
-### Тестирование
+## Разработка
 
 ```bash
+git clone https://github.com/thedvxch/anime365wrapper.git
+cd anime365wrapper
+npm install
+npm run build
 npm test
 ```
-
-## 📞 Поддержка
-
-- 🐛 **Баги и предложения**: [GitHub Issues](https://github.com/thedvxchsquad/anime365wrapper/issues)
-- 📖 **Документация API**: [TSDocs](https://tsdocs.dev)
-- 💬 **Обсуждения**: [GitHub Discussions](https://github.com/thedvxchsquad/anime365wrapper/discussions)

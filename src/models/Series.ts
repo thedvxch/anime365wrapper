@@ -1,4 +1,4 @@
-import type { Episode } from './Episode';
+import type { Episode } from './Episode.js';
 
 export interface Link {
   title: string;
@@ -36,6 +36,7 @@ export interface Series {
   isHentai: number;
   links: Link[];
   myAnimeListId: number;
+  anilistId?: number;
   myAnimeListScore?: string;
   worldArtScore?: string;
   worldArtTopPlace?: string | null;

@@ -1,5 +1,5 @@
-import type { Episode } from './Episode';
-import type { Series } from './Series';
+import type { Episode } from './Episode.js';
+import type { Series } from './Series.js';
 
 export interface Translation {
   id: number;

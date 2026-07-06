@@ -1,4 +1,4 @@
-import type { Translation } from './Translation';
+import type { Translation } from './Translation.js';
 
 export interface Episode {
   id: number;

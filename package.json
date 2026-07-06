@@ -1,26 +1,29 @@
 {
   "name": "anime365wrapper",
-  "version": "1.1.1",
-  "description": "Modern TypeScript wrapper for anime365.ru (smotret-anime) API with full type support and ESM/CommonJS compatibility",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "anime365wrapper": "dist/index.js"
+  "version": "2.0.0",
+  "description": "Modern ESM TypeScript wrapper for the smotret-anime.online (anime365) API with full type support",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "start": "node dist/index.js",
-    "test": "jest"
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thedvxchsquad/anime365wrapper.git"
+    "url": "git+https://github.com/thedvxch/anime365wrapper.git"
   },
   "bugs": {
-    "url": "https://github.com/thedvxchsquad/anime365wrapper/issues"
+    "url": "https://github.com/thedvxch/anime365wrapper/issues"
   },
-  "homepage": "https://github.com/thedvxchsquad/anime365wrapper#readme",
+  "homepage": "https://github.com/thedvxch/anime365wrapper#readme",
   "keywords": [
     "anime",
     "typescript",
@@ -29,13 +32,11 @@
     "smotret-anime",
     "anime365",
     "esm",
-    "commonjs",
-    "nodejs",
-    "javascript"
+    "nodejs"
   ],
-  "author": "dvxchsquad",
+  "author": "ragedrugg",
   "contributors": [
-    "ragedrugg"
+    "thedvxch"
   ],
   "license": "MIT",
   "files": [
@@ -44,12 +45,11 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=18.0.0"
   },
-  "type": "commonjs",
   "devDependencies": {
-    "typescript": "^4.9.5",
-    "jest": "^29.0.0",
-    "@types/jest": "^29.0.0"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
+    "@types/node": "^26.1.0"
   }
 }
