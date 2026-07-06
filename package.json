@@ -1,6 +1,6 @@
 {
   "name": "anime365wrapper",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Modern ESM TypeScript wrapper for the smotret-anime.online (anime365) API with full type support",
   "type": "module",
   "main": "./dist/index.js",

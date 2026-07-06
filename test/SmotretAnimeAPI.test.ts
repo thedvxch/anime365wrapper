@@ -41,11 +41,51 @@ describe('SmotretAnimeAPI', () => {
     );
   });
 
-  it('бросает AnimeApiNetworkError при сбое сети', async () => {
+  it('бросает AnimeApiNetworkError при сбое сети (одиночный домен, без fallback)', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
-    const api = new SmotretAnimeAPI();
+    const api = new SmotretAnimeAPI({ baseUrl: 'https://example-mirror.test/api' });
 
     await expect(api.getSeriesById(1)).rejects.toBeInstanceOf(AnimeApiNetworkError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('перебирает зеркала по умолчанию при сетевых сбоях и запоминает рабочее', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('fetch failed')); // smotret-anime.online
+    fetchMock.mockRejectedValueOnce(new TypeError('fetch failed')); // smotret-anime.app
+    fetchMock.mockResolvedValueOnce(jsonResponse({ data: { id: 1, title: 'Test' } })); // smotret-anime.org
+
+    const api = new SmotretAnimeAPI();
+    const series = await api.getSeriesById(1);
+
+    expect(series).toEqual({ id: 1, title: 'Test' });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('smotret-anime.online');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('smotret-anime.app');
+    expect(String(fetchMock.mock.calls[2][0])).toContain('smotret-anime.org');
+    expect(api.activeBaseUrl).toBe('https://smotret-anime.org/api');
+
+    // следующий запрос начинается сразу с последнего рабочего зеркала
+    fetchMock.mockResolvedValueOnce(jsonResponse({ data: { id: 2, title: 'Second' } }));
+    await api.getSeriesById(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(String(fetchMock.mock.calls[3][0])).toContain('smotret-anime.org');
+  });
+
+  it('не переключает зеркало на ошибке самого API (AnimeApiError)', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: { code: 404, message: 'Series not found.' } }));
+    const api = new SmotretAnimeAPI();
+
+    await expect(api.getSeriesById(999999999)).rejects.toBeInstanceOf(AnimeApiError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(api.activeBaseUrl).toBe('https://smotret-anime.online/api');
+  });
+
+  it('бросает AnimeApiNetworkError, если недоступны все зеркала', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    const api = new SmotretAnimeAPI({ baseUrl: ['https://a.test/api', 'https://b.test/api'] });
+
+    await expect(api.getSeriesById(1)).rejects.toBeInstanceOf(AnimeApiNetworkError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('добавляет access_token в URL после логина', async () => {

@@ -8,9 +8,26 @@ import { AnimeApiError, AnimeApiNetworkError } from '../errors/AnimeApiError.js'
 import { toSearchParams } from '../utils/query.js';
 import { buildChips, type Chip } from '../utils/chips.js';
 
+/**
+ * Известные домены-зеркала anime365 (smotret-anime.app официально числится
+ * рабочим зеркалом для РФ). Пробуются по порядку при сетевых сбоях.
+ */
+export const DEFAULT_MIRRORS: readonly string[] = [
+  'https://smotret-anime.online/api',
+  'https://smotret-anime.app/api',
+  'https://smotret-anime.org/api',
+  'https://anime365.ru/api',
+  'https://anime-365.ru/api',
+];
+
 export interface SmotretAnimeAPIOptions {
-  /** Базовый URL API (при смене домена достаточно передать новый сюда). */
-  baseUrl?: string;
+  /**
+   * Базовый URL API. Строка — фиксированный домен без fallback (как раньше).
+   * Массив — список зеркал в порядке приоритета: при сетевом сбое (не при
+   * ошибке самого API) автоматически пробуется следующий домен из списка.
+   * По умолчанию используется DEFAULT_MIRRORS.
+   */
+  baseUrl?: string | string[];
   /** Название сайта или программы — API просит указывать его в User-Agent. */
   userAgent?: string;
   /** access_token, если уже известен (например, сохранён с прошлого запуска). */
@@ -46,21 +63,40 @@ export interface SeriesListQuery {
 
 /** Обёртка над API smotret-anime.online (бывший anime365.ru). */
 export class SmotretAnimeAPI {
-  private baseUrl: string;
+  private mirrors: string[];
+  private activeMirrorIndex = 0;
   private accessToken?: string;
   private userAgent: string;
   private timeoutMs?: number;
 
   constructor(options: SmotretAnimeAPIOptions = {}) {
-    this.baseUrl = (options.baseUrl ?? 'https://smotret-anime.online/api').replace(/\/+$/, '');
+    const raw = options.baseUrl ?? DEFAULT_MIRRORS;
+    this.mirrors = (Array.isArray(raw) ? raw : [raw]).map((url) => url.replace(/\/+$/, ''));
+    if (this.mirrors.length === 0) {
+      throw new Error('baseUrl: список зеркал не может быть пустым');
+    }
     this.userAgent = options.userAgent ?? 'Anime365Wrapper/2.0';
     this.accessToken = options.accessToken;
     this.timeoutMs = options.timeoutMs;
   }
 
-  /** Домен сайта, вычисленный из baseUrl (baseUrl обычно оканчивается на `/api`). */
+  /** Домен, на котором обслужен последний успешный запрос (baseUrl обычно оканчивается на `/api`). */
+  private get baseUrl(): string {
+    return this.mirrors[this.activeMirrorIndex]!;
+  }
+
   private get siteUrl(): string {
     return this.baseUrl.replace(/\/api$/, '');
+  }
+
+  /** Зеркало, использованное последним успешным запросом (или первое из списка, если запросов ещё не было). */
+  get activeBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  /** Полный список зеркал в порядке приоритета. */
+  get availableMirrors(): readonly string[] {
+    return [...this.mirrors];
   }
 
   /** Страница входа через email/пароль или соцсети — там же можно получить access_token вручную. */
@@ -82,8 +118,8 @@ export class SmotretAnimeAPI {
     return this.accessToken;
   }
 
-  private buildUrl(path: string, params?: object): URL {
-    const url = new URL(`${this.baseUrl}${path}`);
+  private buildUrl(mirror: string, path: string, params?: object): URL {
+    const url = new URL(`${mirror}${path}`);
     if (params) {
       for (const [key, value] of toSearchParams(params)) {
         url.searchParams.set(key, value);
@@ -95,18 +131,54 @@ export class SmotretAnimeAPI {
     return url;
   }
 
+  /** Порядок опроса зеркал для текущего запроса: начиная с последнего успешного, по кругу. */
+  private mirrorOrder(): string[] {
+    return [...this.mirrors.slice(this.activeMirrorIndex), ...this.mirrors.slice(0, this.activeMirrorIndex)];
+  }
+
   /**
    * Универсальный метод для выполнения запросов.
-   * API smotret-anime.online всегда отвечает HTTP 200 и кодирует ошибки в теле
-   * как `{ error: { code, message } }`, поэтому итог разбирается из тела ответа,
-   * а не из статуса.
+   * API smotret-anime.online (и его зеркала) всегда отвечает HTTP 200 и кодирует
+   * ошибки в теле как `{ error: { code, message } }`, поэтому итог разбирается из
+   * тела ответа, а не из статуса.
+   *
+   * При сетевом сбое (недоступный домен, DNS, таймаут) автоматически пробует
+   * следующее зеркало из списка; ошибки самого API (`AnimeApiError`) не приводят
+   * к переключению домена — домен ответил, значит проблема не в нём.
    */
-  private async request<T>(
+  private async request<T>(path: string, params?: object, init: RequestInit = {}): Promise<T> {
+    const order = this.mirrorOrder();
+    let lastNetworkError: AnimeApiNetworkError | undefined;
+    const failedMirrors: string[] = [];
+
+    for (const mirror of order) {
+      try {
+        const result = await this.requestOnce<T>(mirror, path, params, init);
+        this.activeMirrorIndex = this.mirrors.indexOf(mirror);
+        return result;
+      } catch (err) {
+        if (err instanceof AnimeApiNetworkError) {
+          lastNetworkError = err;
+          failedMirrors.push(mirror);
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw new AnimeApiNetworkError(
+      `Не удалось подключиться ни к одному из зеркал API (${failedMirrors.join(', ')}): ${lastNetworkError?.message}`,
+      { cause: lastNetworkError }
+    );
+  }
+
+  private async requestOnce<T>(
+    mirror: string,
     path: string,
-    params?: object,
-    init: RequestInit = {}
+    params: object | undefined,
+    init: RequestInit
   ): Promise<T> {
-    const url = this.buildUrl(path, params);
+    const url = this.buildUrl(mirror, path, params);
 
     const headers: RequestInit['headers'] = {
       'User-Agent': this.userAgent,

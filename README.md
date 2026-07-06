@@ -32,17 +32,36 @@ API всегда указывать `userAgent` — название сайта 
 - **Для полного сканирования используйте `afterId`, а не `offset`.** При счёте на сотни тысяч записей `offset` работает медленно; `feed: 'id'` и `feed: 'all'` поддерживают постраничный проход через `afterId` (id последней полученной записи).
 - **`subtitlesUrl` из `getTranslationEmbed()` бывает относительным** (например `/episodeTranslations/123.ass?willcache`). Библиотека сама приводит его к абсолютному URL относительно домена API.
 - **У `access_token` нет срока действия** — он действителен, пока не сменится пароль. Храните его как секрет (переменная окружения, секрет-хранилище), не коммитьте в репозиторий.
-- **Домен API может меняться** — при необходимости передайте актуальный через `baseUrl` в конструкторе, всё остальное (страницы логина, access_token) пересчитывается от него автоматически.
+- **Домен API может меняться и блокироваться регионально** — у сервиса несколько официальных зеркал (`smotret-anime.online`, `smotret-anime.app` — рабочее зеркало для РФ, `smotret-anime.org`, `anime365.ru`, `anime-365.ru`). По умолчанию библиотека пробует их все по очереди при сетевых сбоях — см. «Зеркала и fallback» ниже.
 
 ## Конструктор
 
 ```typescript
 new SmotretAnimeAPI(options?: {
-  baseUrl?: string;      // по умолчанию 'https://smotret-anime.online/api'
-  userAgent?: string;    // по умолчанию 'Anime365Wrapper/2.0'
-  accessToken?: string;  // если токен уже известен
-  timeoutMs?: number;    // таймаут запроса, по умолчанию не ограничен
+  baseUrl?: string | string[]; // по умолчанию DEFAULT_MIRRORS (все известные зеркала)
+  userAgent?: string;          // по умолчанию 'Anime365Wrapper/2.0'
+  accessToken?: string;        // если токен уже известен
+  timeoutMs?: number;          // таймаут запроса, по умолчанию не ограничен
 })
+```
+
+## Зеркала и fallback
+
+По умолчанию (`baseUrl` не указан) используется список `DEFAULT_MIRRORS` — все известные домены anime365 в порядке приоритета. При сетевом сбое (недоступный домен, DNS, таймаут) библиотека автоматически пробует следующее зеркало из списка; ошибки самого API (`AnimeApiError`, например 404 или неверный пароль) fallback не запускают — домен ответил, значит проблема не в нём. Зеркало, на котором прошёл последний успешный запрос, запоминается и используется первым в следующий раз.
+
+```typescript
+import { SmotretAnimeAPI, DEFAULT_MIRRORS } from 'anime365wrapper';
+
+console.log(DEFAULT_MIRRORS); // ['https://smotret-anime.online/api', 'https://smotret-anime.app/api', ...]
+
+const api = new SmotretAnimeAPI(); // fallback по всем зеркалам сразу из коробки
+console.log(api.activeBaseUrl); // текущее рабочее зеркало
+
+// baseUrl строкой — фиксированный домен без fallback (поведение как раньше)
+const pinned = new SmotretAnimeAPI({ baseUrl: 'https://smotret-anime.online/api' });
+
+// свой список зеркал
+const custom = new SmotretAnimeAPI({ baseUrl: ['https://smotret-anime.app/api', 'https://anime365.ru/api'] });
 ```
 
 ## Авторизация
