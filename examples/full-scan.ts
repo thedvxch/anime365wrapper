@@ -1,9 +1,9 @@
 // Полное сканирование ленты переводов по afterId (а не offset — так рекомендует
 // документация API при счёте на сотни тысяч записей).
 // Запуск: npm run build && npx tsx examples/full-scan.ts
-import { SmotretAnimeAPI } from 'anime365wrapper';
+import { Anime365API } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI({ userAgent: 'ExampleApp/1.0' });
+const api = new Anime365API({ userAgent: 'ExampleApp/1.0' });
 
 let afterId: number | undefined;
 let total = 0;

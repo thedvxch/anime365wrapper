@@ -1,20 +1,20 @@
-import { SmotretAnimeAPI, type SmotretAnimeAPIOptions, type TranslationsQuery, type SeriesListQuery } from './SmotretAnimeAPI.js';
+import { Anime365API, type Anime365APIOptions, type TranslationsQuery, type SeriesListQuery } from './Anime365API.js';
 import type { Translation } from '../models/Translation.js';
 import type { EmbedTranslation } from '../models/EmbedTranslation.js';
 import type { Episode } from '../models/Episode.js';
 import type { Series } from '../models/Series.js';
 import type { User } from '../models/User.js';
 
-/** Тонкая обёртка над SmotretAnimeAPI, которая запоминает access_token после логина. */
+/** Тонкая обёртка над Anime365API, которая запоминает access_token после логина. */
 export class UserSession {
-  private api: SmotretAnimeAPI;
+  private api: Anime365API;
 
-  constructor(options: SmotretAnimeAPIOptions = {}) {
-    this.api = new SmotretAnimeAPI(options);
+  constructor(options: Anime365APIOptions = {}) {
+    this.api = new Anime365API(options);
   }
 
   /** Прямой доступ к нижележащему клиенту API, если нужны методы, не проксируемые здесь. */
-  get client(): SmotretAnimeAPI {
+  get client(): Anime365API {
     return this.api;
   }
 

@@ -1,4 +1,4 @@
-export * from './api/SmotretAnimeAPI.js';
+export * from './api/Anime365API.js';
 export * from './api/UserSession.js';
 export * from './errors/AnimeApiError.js';
 export * from './utils/chips.js';

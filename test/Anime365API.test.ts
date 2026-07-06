@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SmotretAnimeAPI } from '../src/api/SmotretAnimeAPI.js';
+import { Anime365API, SmotretAnimeAPI } from '../src/api/Anime365API.js';
 import { AnimeApiError, AnimeApiNetworkError } from '../src/errors/AnimeApiError.js';
+
+it('SmotretAnimeAPI остаётся deprecated-алиасом для Anime365API', () => {
+  expect(SmotretAnimeAPI).toBe(Anime365API);
+});
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -9,7 +13,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe('SmotretAnimeAPI', () => {
+describe('Anime365API', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -23,7 +27,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('отдаёт data из успешного ответа', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: { id: 1, title: 'Test' } }));
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     const series = await api.getSeriesById(1);
 
@@ -34,7 +38,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('бросает AnimeApiError, если тело содержит error, даже при HTTP 200', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: { code: 404, message: 'Series not found.' } }));
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     await expect(api.getSeriesById(999999999)).rejects.toMatchObject(
       new AnimeApiError(404, 'Series not found.')
@@ -43,7 +47,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('бросает AnimeApiNetworkError при сбое сети (одиночный домен, без fallback)', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
-    const api = new SmotretAnimeAPI({ baseUrl: 'https://example-mirror.test/api' });
+    const api = new Anime365API({ baseUrl: 'https://example-mirror.test/api' });
 
     await expect(api.getSeriesById(1)).rejects.toBeInstanceOf(AnimeApiNetworkError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -54,7 +58,7 @@ describe('SmotretAnimeAPI', () => {
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed')); // smotret-anime.app
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: { id: 1, title: 'Test' } })); // smotret-anime.org
 
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
     const series = await api.getSeriesById(1);
 
     expect(series).toEqual({ id: 1, title: 'Test' });
@@ -73,7 +77,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('не переключает зеркало на ошибке самого API (AnimeApiError)', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: { code: 404, message: 'Series not found.' } }));
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     await expect(api.getSeriesById(999999999)).rejects.toBeInstanceOf(AnimeApiError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -82,7 +86,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('бросает AnimeApiNetworkError, если недоступны все зеркала', async () => {
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
-    const api = new SmotretAnimeAPI({ baseUrl: ['https://a.test/api', 'https://b.test/api'] });
+    const api = new Anime365API({ baseUrl: ['https://a.test/api', 'https://b.test/api'] });
 
     await expect(api.getSeriesById(1)).rejects.toBeInstanceOf(AnimeApiNetworkError);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -92,7 +96,7 @@ describe('SmotretAnimeAPI', () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: { access_token: 'tok123' } }));
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: { id: 1, isLogined: true, name: 'x', isPremium: false, premiumUntil: '' } }));
 
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
     const token = await api.login('a@b.com', 'pass');
     expect(token).toBe('tok123');
 
@@ -102,14 +106,14 @@ describe('SmotretAnimeAPI', () => {
   });
 
   it('getCurrentUser без токена падает без похода в сеть', async () => {
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
     await expect(api.getCurrentUser()).rejects.toThrow(/авторизация/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('передаёт параметры фида и afterId для getTranslations', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: [] }));
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     await api.getTranslations({ feed: 'id', afterId: 10000 });
 
@@ -122,7 +126,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('собирает chips из условий для getSeriesList', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: [] }));
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     await api.getSeriesList({ chips: [{ field: 'genre', operator: '@=', value: [8, 35] }, 'genre_op=and'] });
 
@@ -143,7 +147,7 @@ describe('SmotretAnimeAPI', () => {
         },
       })
     );
-    const api = new SmotretAnimeAPI();
+    const api = new Anime365API();
 
     const embed = await api.getTranslationEmbed(1);
 
@@ -152,7 +156,7 @@ describe('SmotretAnimeAPI', () => {
 
   it('позволяет сменить домен через baseUrl', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ data: [] }));
-    const api = new SmotretAnimeAPI({ baseUrl: 'https://example-mirror.test/api' });
+    const api = new Anime365API({ baseUrl: 'https://example-mirror.test/api' });
 
     await api.getSeriesList();
 

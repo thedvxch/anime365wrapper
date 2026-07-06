@@ -1,9 +1,9 @@
 // Расширенный фильтр каталога через buildChips() — аналог фильтра на сайте
 // https://smotret-anime.online/catalog/filter/genre@=8,35;genre_op=and
 // Запуск: npm run build && npx tsx examples/advanced-filter.ts
-import { SmotretAnimeAPI, buildChips } from 'anime365wrapper';
+import { Anime365API, buildChips } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI({ userAgent: 'ExampleApp/1.0' });
+const api = new Anime365API({ userAgent: 'ExampleApp/1.0' });
 
 const chips = buildChips([
   { field: 'genre', operator: '@=', value: [8, 35] },

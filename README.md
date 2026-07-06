@@ -16,9 +16,9 @@ npm install anime365wrapper
 ## Быстрый старт
 
 ```typescript
-import { SmotretAnimeAPI } from 'anime365wrapper';
+import { Anime365API } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI({ userAgent: 'MyApp/1.0' });
+const api = new Anime365API({ userAgent: 'MyApp/1.0' });
 
 const series = await api.getSeriesList({ query: 'gate', limit: 10 });
 const translations = await api.getTranslations({ feed: 'recent' });
@@ -37,7 +37,7 @@ API всегда указывать `userAgent` — название сайта 
 ## Конструктор
 
 ```typescript
-new SmotretAnimeAPI(options?: {
+new Anime365API(options?: {
   baseUrl?: string | string[]; // по умолчанию DEFAULT_MIRRORS (все известные зеркала)
   userAgent?: string;          // по умолчанию 'Anime365Wrapper/2.0'
   accessToken?: string;        // если токен уже известен
@@ -50,26 +50,26 @@ new SmotretAnimeAPI(options?: {
 По умолчанию (`baseUrl` не указан) используется список `DEFAULT_MIRRORS` — все известные домены anime365 в порядке приоритета. При сетевом сбое (недоступный домен, DNS, таймаут) библиотека автоматически пробует следующее зеркало из списка; ошибки самого API (`AnimeApiError`, например 404 или неверный пароль) fallback не запускают — домен ответил, значит проблема не в нём. Зеркало, на котором прошёл последний успешный запрос, запоминается и используется первым в следующий раз.
 
 ```typescript
-import { SmotretAnimeAPI, DEFAULT_MIRRORS } from 'anime365wrapper';
+import { Anime365API, DEFAULT_MIRRORS } from 'anime365wrapper';
 
 console.log(DEFAULT_MIRRORS); // ['https://smotret-anime.online/api', 'https://smotret-anime.app/api', ...]
 
-const api = new SmotretAnimeAPI(); // fallback по всем зеркалам сразу из коробки
+const api = new Anime365API(); // fallback по всем зеркалам сразу из коробки
 console.log(api.activeBaseUrl); // текущее рабочее зеркало
 
 // baseUrl строкой — фиксированный домен без fallback (поведение как раньше)
-const pinned = new SmotretAnimeAPI({ baseUrl: 'https://smotret-anime.online/api' });
+const pinned = new Anime365API({ baseUrl: 'https://smotret-anime.online/api' });
 
 // свой список зеркал
-const custom = new SmotretAnimeAPI({ baseUrl: ['https://smotret-anime.app/api', 'https://anime365.ru/api'] });
+const custom = new Anime365API({ baseUrl: ['https://smotret-anime.app/api', 'https://anime365.ru/api'] });
 ```
 
 ## Авторизация
 
 ```typescript
-import { SmotretAnimeAPI } from 'anime365wrapper';
+import { Anime365API } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI({ userAgent: 'MyApp/1.0' });
+const api = new Anime365API({ userAgent: 'MyApp/1.0' });
 
 const token = await api.login('user@example.com', 'password'); // сохраняется в this
 const user = await api.getCurrentUser(); // требует токен
@@ -82,7 +82,7 @@ api.setAccessToken(token);
 
 ### UserSession
 
-Тонкая обёртка, которая запоминает токен после `login()` и проксирует остальные методы `SmotretAnimeAPI` без дублирования его при каждом вызове:
+Тонкая обёртка, которая запоминает токен после `login()` и проксирует остальные методы `Anime365API` без дублирования его при каждом вызове:
 
 ```typescript
 import { UserSession } from 'anime365wrapper';
@@ -97,7 +97,7 @@ const user = await session.getCurrentUser();
 session.client.getAccessToken();
 ```
 
-## Методы SmotretAnimeAPI
+## Методы Anime365API
 
 ### Переводы
 
@@ -150,7 +150,7 @@ getCurrentUser(): Promise<User> // требует access_token
 Список допустимых полей и операторов сам API не публикует — их видно только на сайте (вкладка фильтров каталога) или в `site.ccsData` исходного кода страницы `/catalog`. `buildChips()` лишь механически собирает строку в формате, который использует сайт, ничего не проверяя:
 
 ```typescript
-import { SmotretAnimeAPI, buildChips } from 'anime365wrapper';
+import { Anime365API, buildChips } from 'anime365wrapper';
 
 const chips = buildChips([
   { field: 'genre', operator: '@=', value: [8, 35] },
@@ -158,16 +158,16 @@ const chips = buildChips([
 ]);
 // chips === 'genre@=8,35;genre_op=and'
 
-const api = new SmotretAnimeAPI();
+const api = new Anime365API();
 const results = await api.getSeriesList({ chips });
 ```
 
 ## Обработка ошибок
 
 ```typescript
-import { SmotretAnimeAPI, AnimeApiError, AnimeApiNetworkError } from 'anime365wrapper';
+import { Anime365API, AnimeApiError, AnimeApiNetworkError } from 'anime365wrapper';
 
-const api = new SmotretAnimeAPI();
+const api = new Anime365API();
 
 try {
   await api.getSeriesById(999999999);

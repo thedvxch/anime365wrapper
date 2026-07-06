@@ -20,7 +20,7 @@ export const DEFAULT_MIRRORS: readonly string[] = [
   'https://anime-365.ru/api',
 ];
 
-export interface SmotretAnimeAPIOptions {
+export interface Anime365APIOptions {
   /**
    * Базовый URL API. Строка — фиксированный домен без fallback (как раньше).
    * Массив — список зеркал в порядке приоритета: при сетевом сбое (не при
@@ -35,6 +35,9 @@ export interface SmotretAnimeAPIOptions {
   /** Таймаут запроса в миллисекундах. По умолчанию не ограничен. */
   timeoutMs?: number;
 }
+
+/** @deprecated Переименовано в {@link Anime365APIOptions} под имя пакета — алиас будет удалён в 3.0. */
+export type SmotretAnimeAPIOptions = Anime365APIOptions;
 
 export interface TranslationsQuery {
   /** Готовая лента: последние добавленные / онгоинги / полный список по id / все (включая неактивные). */
@@ -61,15 +64,15 @@ export interface SeriesListQuery {
   offset?: number;
 }
 
-/** Обёртка над API smotret-anime.online (бывший anime365.ru). */
-export class SmotretAnimeAPI {
+/** Обёртка над API anime365 (домены smotret-anime.online / anime365.ru и их зеркала). */
+export class Anime365API {
   private mirrors: string[];
   private activeMirrorIndex = 0;
   private accessToken?: string;
   private userAgent: string;
   private timeoutMs?: number;
 
-  constructor(options: SmotretAnimeAPIOptions = {}) {
+  constructor(options: Anime365APIOptions = {}) {
     const raw = options.baseUrl ?? DEFAULT_MIRRORS;
     this.mirrors = (Array.isArray(raw) ? raw : [raw]).map((url) => url.replace(/\/+$/, ''));
     if (this.mirrors.length === 0) {
@@ -274,3 +277,6 @@ export class SmotretAnimeAPI {
     return this.request<User>('/me');
   }
 }
+
+/** @deprecated Переименован в {@link Anime365API} под имя пакета — алиас будет удалён в 3.0. */
+export { Anime365API as SmotretAnimeAPI };
